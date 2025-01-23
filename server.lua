@@ -1,13 +1,11 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
--- Plaka değiştirme eventi
 RegisterNetEvent('changer:server:updatePlate', function(oldPlate, newPlate)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
     
     if not Player then return end
 
-    -- Veritabanında plaka güncelleme
     MySQL.update('UPDATE player_vehicles SET plate = ?, mods = JSON_SET(mods, "$.plate", ?) WHERE plate = ? AND citizenid = ?', {
         newPlate,
         newPlate,
@@ -30,7 +28,6 @@ RegisterNetEvent('changer:server:updatePlate', function(oldPlate, newPlate)
     end)
 end)
 
--- Telefon numarası değiştirme eventi
 RegisterNetEvent('changer:server:updatePhone', function(oldNumber, newNumber)
     local src = source
     local Player = QBCore.Functions.GetPlayer(src)
@@ -49,7 +46,6 @@ RegisterNetEvent('changer:server:updatePhone', function(oldNumber, newNumber)
     end)
 end)
 
--- Format kontrolleri
 local function IsValidPlate(plate)
     return string.match(plate, "^[A-Z0-9]{3,7}$") ~= nil
 end
@@ -58,7 +54,6 @@ local function IsValidPhone(phone)
     return string.match(phone, "^[0-9]{7,9}$") ~= nil
 end
 
--- Kontrol eventleri
 RegisterNetEvent('changer:server:checkPlate', function(plate)
     local src = source
     
@@ -92,7 +87,6 @@ RegisterNetEvent('changer:server:checkPhone', function(phone)
         end
     end)
 end)
-
 
 CreateThread(function()
     QBCore.Commands.Add('ck', 'Karakter silme komutu', {{name = 'id', help = 'Oyuncu ID'}}, true, function(source, args)

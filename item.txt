@@ -1,0 +1,41 @@
+qbcore/shared/items.lua
+['platechanger'] = {
+    ['name'] = 'platechanger',
+    ['label'] = 'Plaka Değiştirici',
+    ['weight'] = 1000,
+    ['type'] = 'item',
+    ['image'] = 'platechanger.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Araç plakasını değiştirmek için kullanılır'
+},
+['phonechanger'] = {
+    ['name'] = 'phonechanger',
+    ['label'] = 'Telefon Numarası Değiştirici',
+    ['weight'] = 1000,
+    ['type'] = 'item',
+    ['image'] = 'phonechanger.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Telefon numaranızı değiştirmek için kullanılır'
+},
+
+ox_inventory/data/items.lua
+['platechanger'] = {
+    label = 'Plaka Değiştirici',
+    weight = 1000,
+    stack = true,
+    close = true,
+    description = 'Araç plakasını değiştirmek için kullanılır'
+},
+['phonechanger'] = {
+    label = 'Telefon Numarası Değiştirici',
+    weight = 1000,
+    stack = true,
+    close = true,
+    description = 'Telefon numaranızı değiştirmek için kullanılır'
+},

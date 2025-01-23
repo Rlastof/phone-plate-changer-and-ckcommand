@@ -1,6 +1,5 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
--- Araç kontrollerini tek fonksiyonda topla
 local function CheckVehicleConditions()
     local ped = PlayerPedId()
     local vehicle = GetVehiclePedIsIn(ped, false)
@@ -26,7 +25,6 @@ local function CheckVehicleConditions()
     return vehicle
 end
 
--- Item kullanım exportları
 QBCore.Functions.CreateUseableItem("platechanger", function(source)
     local vehicle = CheckVehicleConditions()
     if vehicle then
@@ -66,16 +64,13 @@ QBCore.Functions.CreateUseableItem("phonechanger", function(source)
     end
 end)
 
--- Server'dan plaka onayı geldiğinde
 RegisterNetEvent('changer:client:plateAvailable', function(newPlate)
     local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
     if vehicle == 0 then return end
     
     local oldPlate = GetVehicleNumberPlateText(vehicle)
     
-    -- Plakayı güncelle
     SetVehicleNumberPlateText(vehicle, newPlate)
     
-    -- Server'a bildir
     TriggerServerEvent('changer:server:updatePlate', oldPlate, newPlate)
 end)
