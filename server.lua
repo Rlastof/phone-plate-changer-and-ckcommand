@@ -34,11 +34,42 @@ RegisterNetEvent('changer:server:updatePhone', function(oldNumber, newNumber)
     
     if not Player then return end
 
-    MySQL.update('UPDATE players SET phone = ? WHERE citizenid = ?', {
-        newNumber,
-        Player.PlayerData.citizenid
-    }, function(affectedRows)
-        if affectedRows > 0 then
+    MySQL.transaction({
+        'UPDATE phone_phones SET phone_number = ? WHERE phone_number = ?',
+        'UPDATE phone_last_phone SET phone_number = ? WHERE phone_number = ?',
+        'UPDATE phone_photo_albums SET phone_number = ? WHERE phone_number = ?',
+        'UPDATE phone_photos SET phone_number = ? WHERE phone_number = ?',
+        'UPDATE phone_notes SET phone_number = ? WHERE phone_number = ?',
+        'UPDATE phone_notifications SET phone_number = ? WHERE phone_number = ?',
+        'UPDATE phone_twitter_accounts SET phone_number = ? WHERE phone_number = ?',
+        'UPDATE phone_phone_contacts SET phone_number = ? WHERE phone_number = ?',
+        'UPDATE phone_phone_contacts SET contact_phone_number = ? WHERE contact_phone_number = ?',
+        'UPDATE phone_phone_calls SET caller = ? WHERE caller = ?',
+        'UPDATE phone_phone_calls SET callee = ? WHERE callee = ?',
+        'UPDATE phone_phone_blocked_numbers SET phone_number = ? WHERE phone_number = ?',
+        'UPDATE phone_phone_blocked_numbers SET blocked_number = ? WHERE blocked_number = ?',
+        'UPDATE phone_phone_voicemail SET caller = ? WHERE caller = ?',
+        'UPDATE phone_phone_voicemail SET callee = ? WHERE callee = ?',
+        'UPDATE phone_instagram_accounts SET phone_number = ? WHERE phone_number = ?'
+    }, {
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber},
+        {newNumber, oldNumber}
+    }, function(success)
+        if success then
             TriggerClientEvent('QBCore:Notify', src, 'Telefon numarası başarıyla güncellendi!', 'success')
         else
             TriggerClientEvent('QBCore:Notify', src, 'Telefon numarası güncellenirken bir hata oluştu!', 'error')
@@ -79,7 +110,7 @@ RegisterNetEvent('changer:server:checkPhone', function(phone)
         return
     end
     
-    MySQL.scalar('SELECT 1 FROM players WHERE phone = ?', {phone}, function(exists)
+    MySQL.scalar('SELECT 1 FROM phone_phones WHERE phone_number = ?', {phone}, function(exists)
         if exists then
             TriggerClientEvent('QBCore:Notify', src, 'Bu telefon numarası zaten kullanımda!', 'error')
         else
