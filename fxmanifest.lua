@@ -7,14 +7,12 @@ author 'Rlastof'
 description 'Plaka Değiştirme Aracı'
 version '1.0.0'
 
--- Dependency Tanımları
 dependencies {
-    'qb-core',        -- QBCore Framework
-    'ox_lib',         -- OXLib Menü ve Input
-    'ox_inventory'    -- OX Inventory
+    'qb-core',
+    'ox_lib',
+    'ox_inventory'
 }
 
--- Client/Server Scriptler
 client_scripts {
     'client.lua'
 }
@@ -24,5 +22,5 @@ server_scripts {
 }
 
 shared_scripts {
-    '@ox_lib/init.lua' -- OXLib fonksiyonları için
+    '@ox_lib/init.lua'
 }

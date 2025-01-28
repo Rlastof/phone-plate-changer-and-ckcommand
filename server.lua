@@ -29,7 +29,7 @@ RegisterNetEvent('platechanger:server:ChangePlate', function(oldPlate, newPlate)
         {newPlate}
     )
     if exists then
-        QBCore.Functions.Notify(src, 'This plate is already in use!', 'error')
+        QBCore.Functions.Notify(src, 'Bu plaka zaten kullanımda!', 'error')
         return
     end
 
@@ -48,9 +48,9 @@ RegisterNetEvent('platechanger:server:ChangePlate', function(oldPlate, newPlate)
             
             -- Update vehicle in-world plate
             TriggerClientEvent('platechanger:client:ApplyNewPlate', src, oldPlate, newPlate)
-            QBCore.Functions.Notify(src, 'Plate changed to: '..newPlate, 'success')
+            QBCore.Functions.Notify(src, 'Plaka değiştirildi: '..newPlate, 'success')
         else
-            QBCore.Functions.Notify(src, 'Failed to change plate!', 'error')
+            QBCore.Functions.Notify(src, 'Plaka değiştirilemedi!', 'error')
         end
     end)
 end)
