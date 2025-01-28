@@ -1,41 +1,26 @@
 qbcore/shared/items.lua
 ['platechanger'] = {
     ['name'] = 'platechanger',
-    ['label'] = 'Plaka Değiştirici',
-    ['weight'] = 1000,
+    ['label'] = 'Yeni Plaka',
+    ['weight'] = 500,
     ['type'] = 'item',
     ['image'] = 'platechanger.png',
-    ['unique'] = false,
+    ['unique'] = true,
     ['useable'] = true,
     ['shouldClose'] = true,
     ['combinable'] = nil,
-    ['description'] = 'Araç plakasını değiştirmek için kullanılır'
-},
-['phonechanger'] = {
-    ['name'] = 'phonechanger',
-    ['label'] = 'Telefon Numarası Değiştirici',
-    ['weight'] = 1000,
-    ['type'] = 'item',
-    ['image'] = 'phonechanger.png',
-    ['unique'] = false,
-    ['useable'] = true,
-    ['shouldClose'] = true,
-    ['combinable'] = nil,
-    ['description'] = 'Telefon numaranızı değiştirmek için kullanılır'
-},
+    ['description'] = 'Legal bir şekilde plakayı değiştirir'
+}
 
 ox_inventory/data/items.lua
 ['platechanger'] = {
-    label = 'Plaka Değiştirici',
-    weight = 1000,
-    stack = true,
-    close = true,
-    description = 'Araç plakasını değiştirmek için kullanılır'
-},
-['phonechanger'] = {
-    label = 'Telefon Numarası Değiştirici',
-    weight = 1000,
-    stack = true,
-    close = true,
-    description = 'Telefon numaranızı değiştirmek için kullanılır'
-},
+    label = 'Yeni Plaka',
+    weight = 500,
+    stack = false,
+    consume = 1,
+    client = {
+        use = function()
+            TriggerEvent('platechanger:client:UsePlateChanger')
+        end
+    }
+}

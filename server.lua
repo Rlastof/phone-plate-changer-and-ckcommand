@@ -1,151 +1,56 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
-RegisterNetEvent('changer:server:updatePlate', function(oldPlate, newPlate)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    
-    if not Player then return end
+QBCore.Functions.CreateUseableItem('platechanger', function(source)
+    TriggerClientEvent('platechanger:client:UsePlateChanger', source)
+end)
 
-    exports.oxmysql:update('UPDATE player_vehicles SET plate = ?, mods = JSON_SET(mods, "$.plate", ?) WHERE plate = ? AND citizenid = ?', {
-        newPlate,
+-- Check Vehicle Ownership
+QBCore.Functions.CreateCallback('platechanger:server:CheckOwnership', function(source, cb, plate)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    if not player then return cb(false) end
+
+    local result = MySQL.Sync.fetchScalar(
+        'SELECT 1 FROM player_vehicles WHERE citizenid = ? AND plate = ?',
+        {player.PlayerData.citizenid, plate}
+    )
+    cb(result ~= nil)
+end)
+
+-- Change Plate
+RegisterNetEvent('platechanger:server:ChangePlate', function(oldPlate, newPlate)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    if not player then return end
+
+    -- Check if new plate already exists
+    local exists = MySQL.Sync.fetchScalar(
+        'SELECT 1 FROM player_vehicles WHERE plate = ?',
+        {newPlate}
+    )
+    if exists then
+        QBCore.Functions.Notify(src, 'This plate is already in use!', 'error')
+        return
+    end
+
+    -- Update database
+    MySQL.update('UPDATE player_vehicles SET plate = ? WHERE plate = ? AND citizenid = ?', {
         newPlate,
         oldPlate,
-        Player.PlayerData.citizenid
-    }, function(affectedRows)
-        if affectedRows > 0 then
-            TriggerClientEvent('ox_lib:notify', src, {
-                title = 'Başarılı',
-                description = 'Plaka başarıyla güncellendi!',
-                type = 'success'
-            })
+        player.PlayerData.citizenid
+    }, function(rowsChanged)
+        if rowsChanged > 0 then
+            -- Update mods JSON
+            MySQL.update(
+                'UPDATE player_vehicles SET mods = JSON_SET(mods, "$.plate", ?) WHERE plate = ?',
+                {newPlate, newPlate}
+            )
+            
+            -- Update vehicle in-world plate
+            TriggerClientEvent('platechanger:client:ApplyNewPlate', src, oldPlate, newPlate)
+            QBCore.Functions.Notify(src, 'Plate changed to: '..newPlate, 'success')
         else
-            TriggerClientEvent('ox_lib:notify', src, {
-                title = 'Hata',
-                description = 'Plaka güncellenirken bir hata oluştu!',
-                type = 'error'
-            })
+            QBCore.Functions.Notify(src, 'Failed to change plate!', 'error')
         end
     end)
-end)
-
-RegisterNetEvent('changer:server:updatePhone', function(oldNumber, newNumber)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    
-    if not Player then return end
-
-    exports.oxmysql:transaction({
-        'UPDATE phone_phones SET phone_number = ? WHERE phone_number = ? AND owner_id = ?',
-        'UPDATE phone_last_phone SET phone_number = ? WHERE phone_number = ? AND id = ?',
-        'UPDATE phone_photo_albums SET phone_number = ? WHERE phone_number = ?',
-        'UPDATE phone_photos SET phone_number = ? WHERE phone_number = ?',
-        'UPDATE phone_notes SET phone_number = ? WHERE phone_number = ?',
-        'UPDATE phone_notifications SET phone_number = ? WHERE phone_number = ?',
-        'UPDATE phone_twitter_accounts SET phone_number = ? WHERE phone_number = ?',
-        'UPDATE phone_phone_contacts SET phone_number = ? WHERE phone_number = ?',
-        'UPDATE phone_phone_contacts SET contact_phone_number = ? WHERE contact_phone_number = ?',
-        'UPDATE phone_phone_calls SET caller = ? WHERE caller = ?',
-        'UPDATE phone_phone_calls SET callee = ? WHERE callee = ?',
-        'UPDATE phone_phone_blocked_numbers SET phone_number = ? WHERE phone_number = ?',
-        'UPDATE phone_phone_blocked_numbers SET blocked_number = ? WHERE blocked_number = ?',
-        'UPDATE phone_phone_voicemail SET caller = ? WHERE caller = ?',
-        'UPDATE phone_phone_voicemail SET callee = ? WHERE callee = ?',
-        'UPDATE phone_instagram_accounts SET phone_number = ? WHERE phone_number = ?'
-    }, {
-        {newNumber, oldNumber, Player.PlayerData.citizenid},
-        {newNumber, oldNumber, Player.PlayerData.citizenid},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber},
-        {newNumber, oldNumber}
-    }, function(success)
-        if success then
-            TriggerClientEvent('QBCore:Notify', src, 'Telefon numarası başarıyla güncellendi!', 'success')
-        else
-            TriggerClientEvent('QBCore:Notify', src, 'Telefon numarası güncellenirken bir hata oluştu!', 'error')
-        end
-    end)
-end)
-
-local function IsValidPlate(plate)
-    return string.match(plate, "^[A-Z0-9]{3,7}$") ~= nil
-end
-
-local function IsValidPhone(phone)
-    return string.match(phone, "^[0-9]{7,9}$") ~= nil
-end
-
-RegisterNetEvent('changer:server:checkPlate', function(plate)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    
-    if not Player then return end
-    
-    if not IsValidPlate(plate) then
-        TriggerClientEvent('QBCore:Notify', src, 'Geçersiz plaka formatı!', 'error')
-        return
-    end
-    
-    exports.oxmysql:scalar('SELECT 1 FROM player_vehicles WHERE plate = ? AND citizenid = ?', {plate, Player.PlayerData.citizenid}, function(exists)
-        if exists then
-            TriggerClientEvent('QBCore:Notify', src, 'Bu plaka zaten kullanımda!', 'error')
-        else
-            TriggerClientEvent('changer:client:plateAvailable', src, plate)
-        end
-    end)
-end)
-
-RegisterNetEvent('changer:server:checkPhone', function(phone)
-    local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    
-    if not Player then return end
-    
-    if not IsValidPhone(phone) then
-        TriggerClientEvent('QBCore:Notify', src, 'Geçersiz telefon numarası formatı!', 'error')
-        return
-    end
-    
-    exports.oxmysql:scalar('SELECT 1 FROM phone_phones WHERE phone_number = ? AND owner_id = ?', {phone, Player.PlayerData.citizenid}, function(exists)
-        if exists then
-            TriggerClientEvent('QBCore:Notify', src, 'Bu telefon numarası zaten kullanımda!', 'error')
-        else
-            TriggerClientEvent('changer:client:phoneAvailable', src, phone)
-        end
-    end)
-end)
-
-CreateThread(function()
-    QBCore.Commands.Add('ck', 'Karakter silme komutu', {{name = 'id', help = 'Oyuncu ID'}}, true, function(source, args)
-        local src = source
-        local playerId = args[1]
-        local Player = QBCore.Functions.GetPlayer(tonumber(playerId))
-        if Player then
-            local citizenid = Player.PlayerData.citizenid
-            DropPlayer(playerId, 'Karakteriniz silindi.')
-            CreateThread(function()
-                Wait(200)
-    
-                exports.oxmysql:execute('DELETE FROM players WHERE citizenid = ?', { citizenid })
-                exports.oxmysql:execute('DELETE FROM player_vehicles WHERE citizenid = ?', { citizenid })
-                exports.oxmysql:execute('DELETE FROM player_outfits WHERE citizenid = ?', { citizenid })
-                exports.oxmysql:execute('DELETE FROM player_houses WHERE citizenid = ?', { citizenid })
-                exports.oxmysql:execute('DELETE FROM player_contacts WHERE citizenid = ?', { citizenid })
-                exports.oxmysql:execute('DELETE FROM playerskins WHERE citizenid = ?', { citizenid })
-                TriggerClientEvent("QBCore:Notify", src, "Karakter başarıyla silindi!")
-            end)
-        else
-            TriggerClientEvent('QBCore:Notify', src, 'Oyuncu bulunamadı!', 'error')
-        end
-    end, 'god')
 end)

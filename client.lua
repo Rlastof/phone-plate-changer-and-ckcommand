@@ -1,76 +1,63 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 
-local function CheckVehicleConditions()
+local IsBusy = false
+
+-- Use Plate Changer Item
+RegisterNetEvent('platechanger:client:UsePlateChanger', function()
     local ped = PlayerPedId()
     local vehicle = GetVehiclePedIsIn(ped, false)
-    
-    if vehicle == 0 then
-        lib.notify({
-            title = 'Hata',
-            description = 'Bir araç içinde olmalısın!',
-            type = 'error'
-        })
-        return false
-    end
-    
+
+    -- Check if player is in driver seat
     if GetPedInVehicleSeat(vehicle, -1) ~= ped then
-        lib.notify({
-            title = 'Hata',
-            description = 'Sürücü koltuğunda olmalısın!',
-            type = 'error'
-        })
-        return false
+        QBCore.Functions.Notify('You must be in the driver seat!', 'error')
+        return
     end
-    
-    return vehicle
-end
 
-QBCore.Functions.CreateUseableItem("platechanger", function(source)
-    local vehicle = CheckVehicleConditions()
-    if vehicle then
-        local currentPlate = GetVehicleNumberPlateText(vehicle)
-        local input = lib.inputDialog('Plaka Değiştirme', {
-            {
-                type = 'input',
-                label = 'Yeni Plaka',
-                placeholder = currentPlate,
-                required = true,
-                min = 3,
-                max = 7
-            }
-        })
+    if vehicle == 0 then
+        QBCore.Functions.Notify('No vehicle found!', 'error')
+        return
+    end
 
-        if input then
-            TriggerServerEvent('changer:server:checkPlate', input[1])
+    local currentPlate = QBCore.Functions.GetPlate(vehicle)
+    if not currentPlate then return end
+
+    -- Check vehicle ownership via server
+    QBCore.Functions.TriggerCallback('platechanger:server:CheckOwnership', function(isOwned)
+        if not isOwned then
+            QBCore.Functions.Notify('This vehicle is not yours!', 'error')
+            return
         end
-    end
+
+        -- Open plate input dialog
+        local input = lib.inputDialog('New License Plate', {
+            {type = 'input', label = 'Plate (3-7 alphanumeric)', required = true, min = 3, max = 7}
+        })
+
+        if not input then return end
+        local newPlate = string.upper(input[1]):gsub('%s+', '') -- Remove spaces
+
+        -- Validate plate format
+        if not string.match(newPlate, '^[A-Z0-9]+$') then
+            QBCore.Functions.Notify('Invalid plate format!', 'error')
+            return
+        end
+
+        if #newPlate < 3 or #newPlate > 7 then
+            QBCore.Functions.Notify('Plate must be 3-7 characters!', 'error')
+            return
+        end
+
+        -- Proceed to server
+        TriggerServerEvent('platechanger:server:ChangePlate', currentPlate, newPlate)
+    end, currentPlate)
 end)
 
-QBCore.Functions.CreateUseableItem("phonechanger", function(source)
-    local Player = QBCore.Functions.GetPlayer()
-    local input = lib.inputDialog('Telefon Numarası Değiştirme', {
-        {
-            type = 'input',
-            label = 'Yeni Numara',
-            placeholder = Player.PlayerData.phone,
-            required = true,
-            min = 7,
-            max = 9
-        }
-    })
+-- Apply new plate to vehicle
+RegisterNetEvent('platechanger:client:ApplyNewPlate', function(oldPlate, newPlate)
+    local vehicle = QBCore.Functions.GetClosestVehicle()
+    if not vehicle or GetVehicleNumberPlateText(vehicle) ~= oldPlate then return end
 
-    if input then
-        TriggerServerEvent('changer:server:checkPhone', input[1])
-    end
-end)
-
-RegisterNetEvent('changer:client:plateAvailable', function(newPlate)
-    local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
-    if vehicle == 0 then return end
-    
-    local oldPlate = GetVehicleNumberPlateText(vehicle)
-    
     SetVehicleNumberPlateText(vehicle, newPlate)
-    
-    TriggerServerEvent('changer:server:updatePlate', oldPlate, newPlate)
+    -- Optionally refresh vehicle in QBCore
+    TriggerEvent('qb-vehiclekeys:client:SetOwner', newPlate)
 end)
